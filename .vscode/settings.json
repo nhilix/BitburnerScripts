@@ -1,0 +1,9 @@
+ {
+    // Autosnippet settings
+    "autoSnippet.snippets": [
+        {
+            "pattern": "**/*.js", 
+            "snippet": "ns-template"
+        },
+    ],
+}
