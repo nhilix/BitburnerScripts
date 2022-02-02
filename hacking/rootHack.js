@@ -11,7 +11,7 @@ let argSchema = [
     ['backdoor-only', false],
 ]
 
-/** @param {NS} ns **/
+/** @param {import("../.").NS} ns **/
 export async function main(ns) {
     let options = ns.flags(argSchema);
     processedHosts = ['home'];
@@ -21,7 +21,7 @@ export async function main(ns) {
     await mainHack(ns, hostArray, options);
 }
 
-/** @param {NS} ns **/
+/** @param {import("../.").NS} ns **/
 export async function mainHack(ns, hostArray, options) {
     // While there are connections left to process
     while (hostArray.length > 0) {
@@ -44,7 +44,7 @@ export async function mainHack(ns, hostArray, options) {
                 await ns.scp(util, hostName);
                 // If we have not backdoored the server, try to
                 if (!server.backdoorInstalled){
-                    if (!(hostName === 'w0rld_d34m0n')) {
+                    if (!(hostName === 'w0r1d_d34m0n')) {
                         ns.run(connect,1,hostName); // run connect.js to connect to the server
                         let pid = ns.run(backdoor, 1, hostName); // initiate the backdoor process
                         if (pid === 0) ns.print("Couldn't initiate backdoor on "+hostName+" (insufficient RAM?).  Will try again later"); 

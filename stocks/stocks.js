@@ -8,7 +8,13 @@ export async function main(ns) {
     ns.disableLog('sleep');
     ns.disableLog('getServerMoneyAvailable');
 
-    let stockSymbols = ns.stock.getSymbols(); // all symbols
+    let stockSymbols = [];
+    try {
+        stockSymbols = ns.stock.getSymbols(); // all symbols
+    } catch (err) {
+        ns.print("No TIX api available, killing script");
+        return;
+    }
     let portfolio = []; // init portfolio
     let cycle = 0;
     let cycleProfit = 0;

@@ -1,4 +1,4 @@
-/** @param {NS} ns **/
+/** @param {import("../.").NS} ns **/
 export async function main(ns) {
     let stockSymbols = [];
     try{
@@ -9,7 +9,6 @@ export async function main(ns) {
     const hook0 = eval("document.getElementById('overview-extra-hook-0')");
     const hook1 = eval("document.getElementById('overview-extra-hook-1')");
     var sRam = 0;
-    var ramPort = ns.getPortHandle(1);
 
     while( true ) {
         var investment = 0;
@@ -21,13 +20,9 @@ export async function main(ns) {
                 position += pos[0] * ns.stock.getAskPrice(stock);
             }
         }
-        if (!ramPort.empty()) {
-            sRam = ramPort.read();
-        } else {
-            try {
-                sRam = ns.getServerMaxRam('leaf');
-            } catch (err) {null;}
-        }
+        try {
+            sRam = ns.getServerMaxRam('leaf');
+        } catch (err) {null;}
         var homeRam = ns.getServerMaxRam('home');
         var usedRam = ns.getServerUsedRam('home');
         try {

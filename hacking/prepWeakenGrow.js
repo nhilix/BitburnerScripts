@@ -1,4 +1,5 @@
-import { getServers, getServerInfo, tryRootAccess, disableLogs, formatDuration, formatNumberShort } from '/lib/util.js';
+
+import { getServers, getServerInfo, tryRootAccess, disableLogs, formatDuration, formatNumberShort, canHack } from '/lib/util.js';
 
 let argSchema = [
     ['a', false], // use all player owned servers as the RAM pool
@@ -13,6 +14,8 @@ let argSchema = [
     ['reverse', false], 
     ['T', false], // Open tail logs on execution
     ['tail', false],
+    ['h', false], // Only operate on hackable servers
+    ['hackable-only', false],
 ];
 
 let delayMs = 30, // delay between execution finishes of Weaken/Grow
@@ -22,15 +25,11 @@ let delayMs = 30, // delay between execution finishes of Weaken/Grow
     reserveRam = 0,
     weakenTarget = '',
     numTargets = 0,
+    hackableOnly = false,
     reverse = false;
 
 /** @param {import('../.').NS} ns */
 export async function main(ns) {
-    /*
-     * 
-     * DEPRECATED PLEASE USE peapWeakenGrow.js
-     * 
-     */
     let options = ns.flags(argSchema),
         weakenSize = ns.getScriptRam(weakenScript),
         player = ns.getPlayer(),
@@ -41,6 +40,7 @@ export async function main(ns) {
     weakenTarget = options.s != '' ? options.s : options['target-server'];
     numTargets = options.n != 0 ? options.n : options['number-of-servers'];
     reverse = options.R ? options.R : options['reverse'];
+    hackableOnly = options.h ? options.h : options['hackable-only'];
     if(options.T ? options.T : options['tail']) ns.tail();
     disableLogs(ns, ['getServerMinSecurityLevel', 'getServerMaxMoney', 'getServer', 'getServerSecurityLevel', 'getServerMaxRam', 'getServerUsedRam', 'scan', 'sleep', 'exec'])
     if (weakenTarget === '') {
@@ -105,13 +105,24 @@ export async function main(ns) {
         s = servers[0],
         hServer = ns.getServer(s),
         weakenSecDec = ns.weakenAnalyze(1, hServer.cpuCores);
+    // If we only want to weaken hackable servers, find a new target until one is hackable
+    while (hackableOnly && !canHack(ns,target)) {
+        target = targetsCopy.pop();
+        if (target == null) { break; } // No hackable targets to weaken
+    }
     // While we have targets to prep
     while (targetsCopy.length > 0) {
-        player = ns.getPlayer(); // Update player info (hacking lvl, etc)
+        // Update player information each cycle for latest hack ratings
+        player = ns.getPlayer();
 
         // Determine if our target is still valid.  If security is within a single weaken thread decrease, we can skip to next target
         if (security <= (minSec + weakenSecDec)) {
             target = targetsCopy.pop();
+            // If we only want to weaken hackable servers, find a new target until one is hackable
+            while (hackableOnly && !canHack(ns,target)) {
+                target = targetsCopy.pop();
+                if (target == null) { break; } // No hackable targets to weaken
+            }
             if (target == null) { break; } // Finished processing targets
             info = targetInfo[target];
             security = info.security;
@@ -134,9 +145,9 @@ export async function main(ns) {
 
         // If we have enough ram for atleast one thread
         if (ram >= weakenSize) {
-            // Update target server object with latest information
+            // Update with current state of target
             tServer = ns.getServer(target);
-            // Weaken time updated based on current player state and target state
+            // Update with current server and player state
             weakenTime = ns.formulas.hacking.weakenTime(tServer, player);
             // Maximum threads we can run on this server
             let threads = Math.floor(ram / weakenSize);
@@ -189,6 +200,8 @@ export async function main(ns) {
         }
         await ns.sleep(1000);
     }
+
+    // Once all servers have been weakened we can grow all the servers, weakening in between calls
 }
 
 /** @param {import("../.").NS} ns */
