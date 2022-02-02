@@ -9,5 +9,5 @@ export async function main(ns) {
     if (options.d != 0) {
         await ns.sleep(options.d);
     }
-    await ns.grow(options.s);
+    await ns.hack(options.s);
 }
