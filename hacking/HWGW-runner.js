@@ -7,6 +7,8 @@ let argSchema = [
     ['hack-percent',20],
     ['r', 0], // GB to reserve on server
     ['reserve', 0],
+    ['d', 100], // millisecond delay between growThreads
+    ['delay', 100]
 ]
 
 let hack = '/hacking/hack.js',
@@ -27,8 +29,19 @@ export async function main(ns) {
         growSize = ns.getScriptRam(grow),
         weakenSize = ns.getScriptRam(weaken),
         reserve = options.r ? options.r : options['reserve'],
-        target = options.s != '' ? options.s : options['server-target'];
+        target = options.s != '' ? options.s : options['server-target'],
+        hwgwPort = ns.getPortHandle(2),
+        hwgwTarget = hwgwPort.peek();
+
+    if (hwgwTarget === 'NULL PORT DATA') { 
+        hwgwPort.write([{host:host,target:target}]);
+    } else {
+        hwgwTarget.push({host:host,target:target});
+        hwgwPort.clear();
+        hwgwPort.write(hwgwTarget);
+    }
     
+    delayMs = options.d != 100 ? options.d : options['delay'];
     if (target === '') { ns.print("ERROR: Target must be specified"); return; }
     
     while (true) {

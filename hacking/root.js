@@ -11,7 +11,7 @@ let argSchema = [
     ['backdoor-only', false],
 ]
 
-/** @param {import("../.").NS} ns **/
+/** @param {import("..").NS} ns **/
 export async function main(ns) {
     let options = ns.flags(argSchema);
     processedHosts = ['home'];
@@ -21,7 +21,7 @@ export async function main(ns) {
     await mainHack(ns, hostArray, options);
 }
 
-/** @param {import("../.").NS} ns **/
+/** @param {import("..").NS} ns **/
 export async function mainHack(ns, hostArray, options) {
     // While there are connections left to process
     while (hostArray.length > 0) {

@@ -1,10 +1,9 @@
 import { currMoney, formatMoney, formatRam, disableLogs } from "/lib/util.js";
 
-let baseHack = '/hacking/basicHack.js',
-    leafHack = '/hacking/leafHack.js',
-    util = '/lib/util.js';
+let hwgwManager = '/hacking/HWGW-manager.js';
+    
 let argSchema = [
-    ['--tail',false], // Open up tail window on execute
+    ['tail',false], // Open up tail window on execute
 ]
 
 /** @param {import("../.").NS} ns */
@@ -25,14 +24,14 @@ export async function main(ns) {
             var oldServer = ns.getPurchasedServers().find(s => ns.getServerMaxRam(s) < upgrade.maxRam);
             // If we don't have full 25 purchased server, just buy another
             if (ns.getPurchasedServers().length < 25) {
-                await buyServer(ns, server, upgrade.maxRam, leafTargets);
+                await buyServer(ns, server, upgrade.maxRam);
             // Otherwise, if we found an upgradable server
             } else if (oldServer) {
                 // Kill all scripts on that server then delete it
                 ns.killall(oldServer);
                 ns.deleteServer(oldServer);
                 // Then buy a new server with the original's name
-                await buyServer(ns, oldServer, upgrade.maxRam, leafTargets);
+                await buyServer(ns, oldServer, upgrade.maxRam);
             }
         }
         await ns.sleep(10000);
@@ -61,15 +60,28 @@ function getNextUpgrade(ns, maxRam) {
 }
 
 /** @param {import("../.").NS} ns */
-async function buyServer(ns, server, maxRam, leafTargets) {
+async function buyServer(ns, server, maxRam) {
     // buy a new server with the upgraded max ram target
     var newServer = ns.purchaseServer(server, maxRam);
     // copy our primary hacking utilities to the new server and execute leafHack.js
     if (newServer) {
-        await ns.scp(baseHack, newServer);
-        await ns.scp(leafHack, newServer);
-        await ns.scp(util, newServer);
+        let hwgwPort = ns.getPortHandle(2),
+            hwgwTargets = hwgwPort.peek(),
+            hwgwTarget = null,
+            prep = false;
+        
+        if (hwgwTargets != 'NULL PORT DATA') {
+            hwgwTarget = hwgwTargets.find(t => t.host === newServer);
+        }
 
-        ns.exec(leafHack, newServer, 1, '-N', leafTargets);
+        if (hwgwTarget === null) { 
+            hwgwTarget = {host:newServer,target:''};
+            prep = true;
+        }
+        
+        let args = ['--host', hwgwTarget.host, '--server-target', hwgwTarget.target,
+                    '--reverse', '-d', 150];
+        if (prep) args.push('--prep');
+        ns.run(hwgwManager, 1, ...args);
     }
 }
